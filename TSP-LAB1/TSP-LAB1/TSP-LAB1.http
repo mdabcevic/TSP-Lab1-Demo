@@ -4,3 +4,275 @@ GET {{TSP_LAB1_HostAddress}}/weatherforecast/
 Accept: application/json
 
 ###
+
+
+@baseUrl = http://localhost:5133
+
+# Nakon uspješnih prijava zalijepiti dobivene tokene.
+@aliceToken = PASTE_ALICE_ACCESS_TOKEN
+@bobToken = PASTE_BOB_ACCESS_TOKEN
+@adminToken = PASTE_ADMIN_ACCESS_TOKEN
+
+# Refresh tokeni - opcionalni scenariji.
+@aliceRefresh = PASTE_ALICE_REFRESH_TOKEN
+@aliceRefreshNew = PASTE_NEW_ALICE_REFRESH_TOKEN
+
+
+# PRIPREMA - provjera konfiguracije
+
+### Health check
+# Ocekivano: 200 OK
+GET {{baseUrl}}/weatherforecast/
+Accept: application/json
+
+
+
+### JAVNI ENDPOINTI - PROIZVODI
+### Dohvat svih proizvoda bez autentikacije
+# Ocekivano: 200 OK
+
+GET {{baseUrl}}/api/products
+Accept: application/json
+
+### Dohvat pojedinacnog proizvoda
+# Ocekivano: 200 OK
+# Mechanical Keyboard, ID = 1
+GET {{baseUrl}}/api/products/1
+Accept: application/json
+
+
+### Dohvat nepostojeceg proizvoda
+# Ocekivano: 404 Not Found
+GET {{baseUrl}}/api/products/999
+Accept: application/json
+
+
+
+# ZADATAK 2 - AUTENTIKACIJA KORISNIKA
+
+### Uspjesna prijava Alice
+# Ocekivano: 200 OK
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "alice@example.test",
+  "password": "LabPass123!"
+}
+
+
+### Uspjesna prijava Bob
+# Ocekivano: 200 OK
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "bob@example.test",
+  "password": "LabPass123!"
+}
+
+
+### Uspjesna prijava Administrator
+# Ocekivano: 200 OK
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@example.test",
+  "password": "LabPass123!"
+}
+
+
+### Pogresna lozinka
+# Ocekivano: 401 Unauthorized - Ne smije biti izdan JWT
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "alice@example.test",
+  "password": "wrong-password"
+}
+
+
+### Nepostojeci korisnik
+# Ocekivano: 401 Unauthorized
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "nobody@example.test",
+  "password": "LabPass123!"
+}
+
+
+### Neispravna email adresa
+# Ocekivano: 400 Bad Request
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "not-an-email",
+  "password": "LabPass123!"
+}
+
+
+### Nedostaje lozinka
+# Ocekivano: 400 Bad Request
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "alice@example.test",
+  "password": ""
+}
+
+
+### ZADATAK 3 - JWT I SESIJE
+
+### Pristup narudzbi bez JWT-a
+# Ocekivano: 401 Unauthorized
+GET {{baseUrl}}/api/orders/101
+Accept: application/json
+
+
+### Dodavanje proizvoda bez JWT-a
+# Ocekivano: 401 Unauthorized
+POST {{baseUrl}}/api/products
+Content-Type: application/json
+
+{
+  "name": "Unauthenticated Item",
+  "description": "Should not be created",
+  "price": 10.00,
+  "stockQuantity": 1
+}
+
+
+### JWT neispravnog formata
+# Ocekivano: 401 Unauthorized
+GET {{baseUrl}}/api/orders/101
+Authorization: Bearer NOT_A_REAL_JWT
+
+### AUTENTIKACIJA I RBAC
+
+### Alice pristupa svojoj narudzbi 101
+# Ocekivano: 200 OK
+GET {{baseUrl}}/api/orders/101
+Authorization: Bearer {{aliceToken}}
+Accept: application/json
+
+
+### Alice pristupa Bobovoj narudzbi 102
+# Ocekivano: 404 Not Found
+GET {{baseUrl}}/api/orders/102
+Authorization: Bearer {{aliceToken}}
+Accept: application/json
+
+
+### Alice dohvaca popis narudzbi
+# Ocekivano: 200 OK
+GET {{baseUrl}}/api/orders
+Authorization: Bearer {{aliceToken}}
+Accept: application/json
+
+
+### Bob dohvaca popis narudzbi
+# Ocekivano: 200 OK
+GET {{baseUrl}}/api/orders
+Authorization: Bearer {{bobToken}}
+Accept: application/json
+
+
+### Administrator dohvaca sve narudzbe
+# Ocekivano: 200 OK (Rezultat sadrzi narudzbe 101 i 102)
+GET {{baseUrl}}/api/orders
+Authorization: Bearer {{adminToken}}
+Accept: application/json
+
+
+### Administrator dohvaca Aliceinu narudzbu
+# Ocekivano: 200 OK
+GET {{baseUrl}}/api/orders/101
+Authorization: Bearer {{adminToken}}
+Accept: application/json
+
+
+### Alice pokusava dodati proizvod
+# Ocekivano: 403 Forbidden
+POST {{baseUrl}}/api/products
+Authorization: Bearer {{aliceToken}}
+Content-Type: application/json
+
+{
+  "name": "Rejected Customer Item",
+  "description": "Customer must not create products",
+  "price": 12.90,
+  "stockQuantity": 2
+}
+
+
+### Administrator dodaje proizvod
+# Ocekivano: 201 Created
+POST {{baseUrl}}/api/products
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "name": "Security Lab Cable",
+  "description": "Added by administrator",
+  "price": 12.90,
+  "stockQuantity": 5
+}
+
+
+### S19a - Provjera dodanog proizvoda
+# Ocekivano: 200 OK (Novi proizvod treba biti u rezultatu)
+GET {{baseUrl}}/api/products
+Accept: application/json
+
+
+
+# ZADATAK 5 - POSLOVNA AUTORIZACIJA / BOLA
+
+### Nepostojeca narudzba, Alice
+# Ocekivano: 404 Not Found
+GET {{baseUrl}}/api/orders/999
+Authorization: Bearer {{aliceToken}}
+
+
+### Nepostojeca narudzba, Admin
+# Ocekivano: 404 Not Found
+GET {{baseUrl}}/api/orders/999
+Authorization: Bearer {{adminToken}}
+
+
+### LOGOUT I OPOZIV SESIJE
+### Alice pristupa narudzbi prije logouta
+# Ocekivano: 200 OK
+GET {{baseUrl}}/api/orders/101
+Authorization: Bearer {{aliceToken}}
+
+
+### Logout Alice
+# Ocekivano: 204 No Content
+
+POST {{baseUrl}}/api/auth/logout
+Authorization: Bearer {{aliceToken}}
+
+
+### Alice pokusava koristiti isti JWT nakon logouta
+# Ocekivano: 401 Unauthorized
+GET {{baseUrl}}/api/orders/101
+Authorization: Bearer {{aliceToken}}
+
+
+### Ponovna prijava Alice nakon logouta
+# Ocekivano: 200 OK
+# Kreira se nova sesija i novi tokeni
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "alice@example.test",
+  "password": "LabPass123!"
+}
