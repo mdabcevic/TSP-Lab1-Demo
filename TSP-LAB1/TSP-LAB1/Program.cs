@@ -78,7 +78,17 @@ builder.Services
                     return;
                 }
 
-                
+                var db = context.HttpContext.RequestServices.GetRequiredService<ShopDbContext>();
+                var session = await db.UserSessions
+                    .AsNoTracking()
+                    .Include(s => s.User)
+                    .SingleOrDefaultAsync(s => s.Id == sessionId, context.HttpContext.RequestAborted);
+
+                if (session is null || session.UserId != userId || session.RevokedAt is not null || session.ExpiresAt <= DateTimeOffset.UtcNow ||
+                    !session.User.IsActive || session.User.AuthVersion != authVersion || session.User.Role != role)
+                {
+                    context.Fail("Session is not valid.");
+                }
             }
         };
     });
