@@ -4,18 +4,21 @@ using TSP_LAB1.Security;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
 
-
+// Omogucuje drugim servisima (Auth, Token...) pristup JWT konfiguraciji putem DI.
 builder.Services
     .AddOptions<JwtOptions>()
     .Bind(builder.Configuration.GetSection(JwtOptions.SectionName))
+
+    // Enforce pravila i ograničenja (required, range...)
     .ValidateDataAnnotations()
     .Validate(options => Encoding.UTF8.GetByteCount(options.SigningKey) >= 32, "JWT signing key must contain at least 32 bytes.")
+
+    // Fail Securely princip - bolje je zaustaviti aplikaciju s neispravnom sigurnosnom konfiguracijom nego problem otkriti tek prilikom prvog autentikacijskog zahtjeva
     .ValidateOnStart();
 
 // TODO: 1. zadatak - postavite odgovarajuću JWT konfiguraciju u appsettubgs.json
@@ -24,6 +27,7 @@ var jwt = builder.Configuration
     .GetRequiredSection(JwtOptions.SectionName)
     .Get<JwtOptions>() ?? throw new InvalidOperationException("JWT configuration is missing.");
 
+// Ovu instancu JWT tokena je potrebno koristiti za centralnu konfiguraciju middleware, prije nego sto aplikacije postane dostupna.
 
 var app = builder.Build();
 
