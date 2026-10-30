@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -99,6 +100,15 @@ builder.Services
             }
         };
     });
+
+builder.Services.AddAuthorizationBuilder()
+    .AddPolicy("OrderOwner", policy =>
+    {
+        policy.RequireAuthenticatedUser();
+        policy.AddRequirements(new OrderOwnerRequirement());
+    });
+
+builder.Services.AddScoped<IAuthorizationHandler, OrderOwnerHandler>();
 
 // Registracija repozitorija za komunikaciju s bazom
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
