@@ -8,6 +8,7 @@ using System.Text;
 using TSP_LAB1.Data;
 using TSP_LAB1.Interfaces;
 using TSP_LAB1.Models;
+using TSP_LAB1.Repositories;
 using TSP_LAB1.Security;
 using TSP_LAB1.Services;
 using TSP_LAB1.Utils;
@@ -99,6 +100,10 @@ builder.Services
         };
     });
 
+// Registracija repozitorija za komunikaciju s bazom
+builder.Services.AddScoped<IProductRepository, ProductRepository>();
+builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 
 var app = builder.Build();

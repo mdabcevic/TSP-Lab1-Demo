@@ -6,7 +6,6 @@ using TSP_LAB1.Data;
 using TSP_LAB1.DTOs;
 using TSP_LAB1.Interfaces;
 using TSP_LAB1.Models;
-using TSP_LAB1.Repositories;
 using TSP_LAB1.Security;
 
 namespace TSP_LAB1.Services;

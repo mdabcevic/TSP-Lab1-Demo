@@ -1,6 +1,6 @@
 ﻿using TSP_LAB1.Models;
 
-namespace TSP_LAB1.Repositories;
+namespace TSP_LAB1.Interfaces;
 
 public interface IUserRepository
 {
