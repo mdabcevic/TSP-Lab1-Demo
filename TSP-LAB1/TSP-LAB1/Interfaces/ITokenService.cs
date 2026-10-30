@@ -7,5 +7,5 @@ public interface ITokenService
     // TODO: dovršiti implementaciju funkcionalnosti za stvaranje ispravnog JWT Access Tokena
     string CreateAccessToken(AppUser user, Guid sessionId);
     string GenerateRefreshToken();
-    //string HashRefreshToken(string refreshToken);
+    string HashRefreshToken(string refreshToken);
 }

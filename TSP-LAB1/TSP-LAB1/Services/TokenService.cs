@@ -61,4 +61,11 @@ public sealed class TokenService(IOptions<JwtOptions> options) : ITokenService
         var bytes = RandomNumberGenerator.GetBytes(48); // Refresh token je nasumicna vjerodajnica, koristi se za obnavljanje pristupa bez ponovnog login sve dok sesija ne istekne.
         return Convert.ToBase64String(bytes);
     }
+
+    public string HashRefreshToken(string refreshToken)
+    {
+        var bytes = Encoding.UTF8.GetBytes(refreshToken);
+        return Convert.ToHexString(SHA256.HashData(bytes));
+    }
+
 }
