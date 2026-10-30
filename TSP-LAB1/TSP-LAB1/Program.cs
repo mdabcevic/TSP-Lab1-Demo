@@ -1,11 +1,15 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 using System.Security.Claims;
 using System.Text;
 using TSP_LAB1.Data;
+using TSP_LAB1.Interfaces;
+using TSP_LAB1.Models;
 using TSP_LAB1.Security;
+using TSP_LAB1.Services;
 using TSP_LAB1.Utils;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -95,6 +99,7 @@ builder.Services
         };
     });
 
+builder.Services.AddScoped<ITokenService, TokenService>();
 
 var app = builder.Build();
 
