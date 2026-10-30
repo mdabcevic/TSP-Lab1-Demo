@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
 using System.Text;
+using TSP_LAB1.Data;
 using TSP_LAB1.Security;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -11,6 +13,11 @@ builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
+builder.Services.AddDbContext<ShopDbContext>(options =>
+{
+    var connectionString = builder.Configuration.GetConnectionString("Shop") ?? throw new InvalidOperationException("Connection string 'Shop' nije konfiguriran.");
+    options.UseNpgsql(connectionString);
+});
 
 // Omogucuje drugim servisima (Auth, Token...) pristup JWT konfiguraciji putem DI.
 builder.Services
@@ -91,4 +98,4 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-app.Run();
+await app.RunAsync();
