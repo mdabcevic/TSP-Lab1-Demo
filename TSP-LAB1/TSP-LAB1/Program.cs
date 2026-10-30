@@ -1,3 +1,6 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Security.Claims;
 using System.Text;
 using TSP_LAB1.Security;
 
@@ -22,12 +25,57 @@ builder.Services
     .ValidateOnStart();
 
 // TODO: 1. zadatak - postavite odgovarajuću JWT konfiguraciju u appsettubgs.json
-// Nakon zadatka, greška će nestati
-var jwt = builder.Configuration
-    .GetRequiredSection(JwtOptions.SectionName)
-    .Get<JwtOptions>() ?? throw new InvalidOperationException("JWT configuration is missing.");
 
-// Ovu instancu JWT tokena je potrebno koristiti za centralnu konfiguraciju middleware, prije nego sto aplikacije postane dostupna.
+var jwt = builder.Configuration  // Ovu instancu JWT tokena je potrebno koristiti za centralnu konfiguraciju middleware, prije nego sto aplikacije postane dostupna.
+
+    .GetRequiredSection(JwtOptions.SectionName)
+    .Get<JwtOptions>() ?? throw new InvalidOperationException("JWT configuration is missing."); // Nakon 1. zadatka, greška će nestati
+
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.MapInboundClaims = false;
+        options.TokenValidationParameters =
+            new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.SigningKey)),
+                ValidateIssuer = true,
+                ValidIssuer = jwt.Issuer,
+                ValidateAudience = true,
+                ValidAudience = jwt.Audience,
+                ValidateLifetime = true,
+                RequireSignedTokens = true,
+                RequireExpirationTime = true,
+                ValidAlgorithms = [SecurityAlgorithms.HmacSha256],
+                ClockSkew = TimeSpan.Zero,
+                NameClaimType = "sub",
+                RoleClaimType = "role"
+            };
+
+        options.Events = new JwtBearerEvents
+        {
+            OnTokenValidated = async context =>
+            {
+                var principal = context.Principal;
+
+                var sub = principal?.FindFirstValue("sub");
+                var sid = principal?.FindFirstValue("sid");
+                var version = principal?.FindFirstValue("av");
+                var role = principal?.FindFirstValue("role");
+
+                if (!Guid.TryParse(sub, out var userId) || !Guid.TryParse(sid, out var sessionId) || !int.TryParse(version, out var authVersion) || string.IsNullOrWhiteSpace(role))
+                {
+                    context.Fail("Invalid token claims.");
+                    return;
+                }
+
+                
+            }
+        };
+    });
+
 
 var app = builder.Build();
 
