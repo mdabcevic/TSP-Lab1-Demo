@@ -1,0 +1,49 @@
+
+services:
+  postgres:
+    image: postgres:18
+    container_name: secureshop-postgres
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: secureshop
+      POSTGRES_USER: secureshop
+      POSTGRES_PASSWORD: SecureShop123!
+
+    ports:
+      - "127.0.0.1:5433:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql
+
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U secureshop -d secureshop
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  pgadmin:
+    image: dpage/pgadmin4:9.18
+    container_name: secureshop-pgadmin
+    restart: unless-stopped
+
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@secureshop.com
+      PGADMIN_DEFAULT_PASSWORD: PgAdmin123!
+      PGADMIN_DISABLE_POSTFIX: "1"
+
+    ports:
+      - "127.0.0.1:5710:80"
+
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  pgadmin_data:
