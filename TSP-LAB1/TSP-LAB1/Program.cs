@@ -1,10 +1,12 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Scalar.AspNetCore;
 using System.Security.Claims;
 using System.Text;
 using TSP_LAB1.Data;
 using TSP_LAB1.Security;
+using TSP_LAB1.Utils;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -100,12 +102,25 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    app.MapScalarApiReference(options =>
+    {
+        options.WithTitle("TSPLab1 - SecureShop API");
+    });
+
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<ShopDbContext>();
+
+    // Kreiranje sheme iz EF Core modela
+    var created = await db.Database.EnsureCreatedAsync();
+    app.Logger.LogInformation("Database schema created: {Created}", created);
+
+    // Inicijalizacija demonstracijskih podataka
+    await SeedData.InitializeAsync(db);
+    app.Logger.LogInformation("Development seed initialization completed.");
 }
 
 app.UseHttpsRedirection();
-
 app.UseAuthorization();
-
 app.MapControllers();
 
 await app.RunAsync();
